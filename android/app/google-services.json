@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "503233408400",
+    "project_id": "app-store-deed8",
+    "storage_bucket": "app-store-deed8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503233408400:android:09680347c7b060912bd715",
+        "android_client_info": {
+          "package_name": "com.ishanundre2004.dukaan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDEh7mHUxenhooQkDuIU4pglnD4Pp9P14"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
