@@ -4,11 +4,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps;
+import 'dart:convert'; // For base64 decoding
+import 'package:flutter/services.dart' show rootBundle; // For default image handling
 
 class VendorDetailsPage extends StatefulWidget {
   final String vendorName;
   final String vendorAddress;
-  final LatLng vendorLocation;
+  final google_maps.LatLng vendorLocation;
   final String vendorId;
 
   const VendorDetailsPage({
@@ -27,29 +30,35 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy');
   String? businessName;
+  String? vendorImage; // To store the decoded image
+  String? vendorAddress; // To store the vendor's address
+  String? vendorPhone; // To store the vendor's phone number
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchBusinessName();
+    _fetchVendorDetails();
   }
 
-  // Fetch business name from vendor's user document
-  Future<void> _fetchBusinessName() async {
+  // Fetch vendor details including image, address, and phone
+  Future<void> _fetchVendorDetails() async {
     try {
       final doc =
           await _firestore.collection('users').doc(widget.vendorId).get();
       if (doc.exists) {
         setState(() {
           businessName = doc.data()?['businessName'];
+          vendorImage = doc.data()?['img']; // Fetch base64 encoded image
+          vendorAddress = doc.data()?['location']['address']; // Fetch address
+          vendorPhone = doc.data()?['phone']; // Fetch phone number
           _isLoading = false;
         });
       } else {
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      print('Error fetching business name: $e');
+      print('Error fetching vendor details: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -63,6 +72,29 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
         .where('businessName', isEqualTo: businessName)
         .orderBy('timestamp', descending: true)
         .snapshots();
+  }
+
+  // Decode base64 image or use a default placeholder
+  Widget _buildVendorImage() {
+    if (vendorImage != null && vendorImage!.isNotEmpty) {
+      try {
+        return Image.memory(
+          base64Decode(vendorImage!),
+          width: 500,
+          height: 200,
+          fit: BoxFit.cover,
+        );
+      } catch (e) {
+        print('Error decoding image: $e');
+      }
+    }
+    // Return a default placeholder image if no image is found
+    return Image.asset(
+      'assets/store.png', // Add a default image in your assets
+      width: 500,
+      height: 200,
+      fit: BoxFit.cover,
+    );
   }
 
   @override
@@ -101,13 +133,21 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
                 ),
               ),
             ),
-            // Container(color: Colors.black.withOpacity(0.5)),
             SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Vendor Image
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: _buildVendorImage(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Vendor Name
                     Text(
                       widget.vendorName,
                       style: const TextStyle(
@@ -117,13 +157,25 @@ class _VendorDetailsPageState extends State<VendorDetailsPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      widget.vendorAddress,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        color: Color.fromARGB(179, 0, 0, 0),
+                    // Vendor Address
+                    if (vendorAddress != null)
+                      Text(
+                        vendorAddress!,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Color.fromARGB(179, 0, 0, 0),
+                        ),
                       ),
-                    ),
+                    const SizedBox(height: 8),
+                    // Vendor Phone
+                    if (vendorPhone != null)
+                      Text(
+                        "Phone: $vendorPhone",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color.fromARGB(179, 0, 0, 0),
+                        ),
+                      ),
                     const SizedBox(height: 20),
                     const Text(
                       "Available Products:",
